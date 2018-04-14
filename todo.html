@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+		#app{
+			width: 480px;
+			margin: auto;
+			padding: 20px;
+			box-shadow: rgba(0, 0, 0, 0.2) 0 2px 6px 0;
+			border-radius: 5px;
+		}
+		h2{
+			text-align: center;
+			font: "Helvetica Neue";
+			font-weight: bold;
+			font-size: 36px
+		}
+		#new-todo{
+			width: 466px;
+			padding: 6px;
+			font-size: 24px;
+    		font-family: inherit;
+    		line-height: 1.4em;
+    		border: 1px solid #999999;
+    		box-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px 0 inset;
+		}
+		#todo-list {
+		    margin: 10px 0;
+		    padding: 0;
+		    list-style: none; 
+		    font-size: 24px;
+    		font-family: inherit;
+
+		}
+		#todo-list li {
+		    padding: 18px 20px 18px 0;
+		    position: relative;
+		    font-size: 24px;
+		    border-bottom: 1px solid #cccccc;
+		}
+
+		.destroy {
+		    position: absolute;
+		    right: 5px;
+		    top: 20px;
+		    display: none;
+		    cursor: pointer;
+		    width: 20px;
+		    height: 20px;
+		    background: url(destroy.png) no-repeat;
+		}
+		li:hover .destroy{
+			display: block
+		}
+		.destroy:hover{
+			background-position: 0 -20px;
+		}
+		#todo-list input[type="text"] {
+		    width: 466px;
+		    font-size: 24px;
+		    font-family: inherit;
+		    line-height: 1.4em;
+		    border: 0;
+		    outline: none;
+		    padding: 6px;
+		    border: 1px solid #999999;
+		    box-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px 0 inset;
+		    cursor: pointer;
+
+		}
+		.done{
+			text-decoration: line-through;
+			color: gray;
+			font-style: italic;
+		}
+		.select-todo{
+			list-style: none;
+			padding: 0;
+			height: 20px;
+			margin: 10px 0 0
+		}
+		.select-todo li{
+			float: left;
+			width: 100px;
+			
+			border-radius: 5px;
+			cursor: pointer;
+			text-align: center
+		}
+		.select-todo li.active{
+			box-shadow: rgba(0, 0, 0, 0.2) 0 2px 6px 0;
+		}
+	</style>
+</head>
+<body>
+
+	
+	<div id='app' @click="restore">
+		<header>
+			<h2>Todos</h2>
+			<input type="text" id="new-todo" v-model="todo" @keyup.enter="newTodo">
+		</header>
+		<section v-show='showList'>
+			
+			<input type="checkbox" id="all-select" v-model="allSelect" >
+			<label for="all-select">全部已完成</label>
+			
+			<ul id="todo-list">
+				<li v-for="(item,index) in todos " @dblclick="change(item)" v-show='item.show'>
+					<div v-if="item.renTodo">
+						<input type="checkbox" v-model="item.selected"><label :class='{done:item.selected}'>{{item.name}}</label>
+						<a class="destroy" @click='deleteTodo(index)'></a>
+					</div>
+					
+					<input type="text" v-model="item.name" v-else class='focus' v-focus @keyup.enter='restores'>
+				</li>
+			</ul>
+			
+		</section>
+		<section v-show='showList'>
+			<p>未完成的事：{{count}}件</p>
+			<ul class="select-todo">
+				<li :class="{active:cur=='all'}" @click='cur="all"'>全部</li>
+				<li  :class="{active:cur=='notcom'}" @click='cur="notcom"'>未完成</li>
+				<li  :class="{active:cur=='computed'}" @click='cur="computed"'>已完成</li>
+				<li style='float: right;font-size: 12px; ' v-show='cur=="computed"' @click='clearTodo'>清除已完成</li>
+			</ul>
+		</section>
+	</div>
+<script src="vue.js"></script>
+<script>
+		var vm = new Vue({
+			el: "#app",
+			data:{
+				todos:[{name:'c',selected:false,renTodo:true,show:true}],
+				todo:'',
+				allSelect:false,
+				cur:'all'
+			},
+			methods:{
+				newTodo(){
+					if(this.todo.replace(/^\s+$/,'')==''){return}
+					else{
+						let todo=this.todo.replace(/^\s+|\s+$/,'');
+					this.todos.push({name:todo,selected:false,renTodo:true,show:true});
+					this.todo='';}
+				},
+				selectAll(a){
+					this.todos.forEach(function(item){
+						item.selected=!a;
+					})
+				},
+				change(item){
+					item.renTodo=false;
+
+				},
+				restore(){
+					this.todos.forEach(function(item){
+						item.renTodo=true;
+					})
+				},
+				deleteTodo(index){
+					this.todos.splice(index,1)
+				},
+				clearTodo(){
+					this.todos=this.todos.filter(item=>!item.selected);
+					this.allSelect=false
+				}
+			},
+			watch:{
+				allSelect(){
+					this.todos.map((item)=>{
+						item.selected=this.allSelect;
+					})
+				},
+				cur(){
+					if(this.cur=='all'){
+						this.todos.map((item)=>{
+						item.show=true;
+					})
+					}else if(this.cur=='notcom'){
+						this.todos.map((item)=>{
+						item.show=!item.selected;
+					})
+					}else if(this.cur=='computed'){
+						this.todos.map((item)=>{
+						item.show=item.selected;
+					})
+
+					}
+				}
+			},
+
+			computed:{
+				count(){
+					var count=0;
+					this.todos.forEach(function(item){
+						if(!item.selected){count++}
+					})
+					return count;
+				},
+				showList(){
+					if(this.todos[0]==null){return false}
+					else{return true}
+				}
+			},
+			directives:{
+				focus:{
+					inserted(el){
+						el.focus()
+					}
+				}
+			},
+
+		})
+	
+	</script>
+</body>
+</html>
